@@ -6,6 +6,7 @@ func ensureAXPermission() {
     _ = AXIsProcessTrustedWithOptions(options)
 }
 
+
 @main
 struct GuardianApp: App {
     @StateObject private var session = SessionManager()
@@ -17,9 +18,7 @@ struct GuardianApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(session)                   
-                .onAppear { ContextManager.shared.start() }
-                .onDisappear { ContextManager.shared.stop() }
+                .environmentObject(session)
         }
     }
 }

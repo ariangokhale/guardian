@@ -12,6 +12,12 @@ final class ContextManager: ObservableObject {
     @Published var bundleID: String = ""
     @Published var windowTitle: String = ""
     @Published var browserURL: String = ""
+    @Published var urlHost: String = ""
+    @Published var urlPathShort: String = ""
+    @Published var urlDisplay: String = ""
+    @Published var urlCategory: DomainCategory = .other
+    @Published var windowTitleClean: String = ""
+
 
     // OCR
     @Published var ocrText: String = ""
@@ -76,18 +82,36 @@ final class ContextManager: ObservableObject {
             self.appName = name
             self.bundleID = bid
             self.windowTitle = title
+            self.windowTitleClean = TitleNormalizer.clean(appName: name, bundleID: bid, rawTitle: title)
         }
+
 
         // 4) Only fetch a URL if a *browser* is actually frontmost right now
         if isBrowser(bundleID: bid) {
             fetchActiveTabURL(for: bid) { [weak self] url in
                 DispatchQueue.main.async {
-                    self?.browserURL = url ?? ""   // empty if no windows/tabs
+                    self?.browserURL = url ?? ""   // keep raw for debugging
+                    if let parsed = URLUtils.normalize(url) {
+                        self?.urlHost = parsed.host
+                        self?.urlPathShort = parsed.pathShort
+                        self?.urlDisplay = parsed.display
+                        self?.urlCategory = DomainCatalog.shared.category(forHost: parsed.host, path: parsed.path)
+                    } else {
+                        self?.urlHost = ""
+                        self?.urlPathShort = ""
+                        self?.urlDisplay = ""
+                        self?.urlCategory = .other
+                    }
                 }
             }
         } else {
-            // Non-browser frontmost → no active browser URL
-            DispatchQueue.main.async { self.browserURL = "" }
+            DispatchQueue.main.async {
+                self.browserURL = ""
+                self.urlHost = ""
+                self.urlPathShort = ""
+                self.urlDisplay = ""
+                self.urlCategory = .other
+            }
         }
 
         // 5) OCR policy (MVP):

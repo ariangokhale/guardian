@@ -17,6 +17,11 @@
 		245B0A1F2E4A3FB500A8F5B0 /* ContextManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A1E2E4A3FB500A8F5B0 /* ContextManager.swift */; };
 		245B0A212E4A895E00A8F5B0 /* SessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A202E4A895E00A8F5B0 /* SessionManager.swift */; };
 		245B0A252E4A8AB900A8F5B0 /* HUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A242E4A8AB900A8F5B0 /* HUD.swift */; };
+		245B0A272E4B8F5200A8F5B0 /* URLUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A262E4B8F5200A8F5B0 /* URLUtils.swift */; };
+		245B0A292E4B958D00A8F5B0 /* DomainCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A282E4B958D00A8F5B0 /* DomainCatalog.swift */; };
+		245B0A2B2E4B97F100A8F5B0 /* TitleNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A2A2E4B97F100A8F5B0 /* TitleNormalizer.swift */; };
+		245B0A2D2E4B9BDE00A8F5B0 /* TriggerScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A2C2E4B9BDE00A8F5B0 /* TriggerScorer.swift */; };
+		245B0A2F2E4BABC100A8F5B0 /* SettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A2E2E4BABC100A8F5B0 /* SettingsManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -51,6 +56,11 @@
 		245B0A1E2E4A3FB500A8F5B0 /* ContextManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextManager.swift; sourceTree = "<group>"; };
 		245B0A202E4A895E00A8F5B0 /* SessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionManager.swift; sourceTree = "<group>"; };
 		245B0A242E4A8AB900A8F5B0 /* HUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUD.swift; sourceTree = "<group>"; };
+		245B0A262E4B8F5200A8F5B0 /* URLUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLUtils.swift; sourceTree = "<group>"; };
+		245B0A282E4B958D00A8F5B0 /* DomainCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainCatalog.swift; sourceTree = "<group>"; };
+		245B0A2A2E4B97F100A8F5B0 /* TitleNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleNormalizer.swift; sourceTree = "<group>"; };
+		245B0A2C2E4B9BDE00A8F5B0 /* TriggerScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TriggerScorer.swift; sourceTree = "<group>"; };
+		245B0A2E2E4BABC100A8F5B0 /* SettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -101,11 +111,16 @@
 		245B09F02E4A3E6D00A8F5B0 /* guardian */ = {
 			isa = PBXGroup;
 			children = (
-				245B0A202E4A895E00A8F5B0 /* SessionManager.swift */,
-				245B09F12E4A3E6D00A8F5B0 /* guardianApp.swift */,
 				245B09F32E4A3E6D00A8F5B0 /* ContentView.swift */,
-				245B0A242E4A8AB900A8F5B0 /* HUD.swift */,
 				245B0A1E2E4A3FB500A8F5B0 /* ContextManager.swift */,
+				245B0A282E4B958D00A8F5B0 /* DomainCatalog.swift */,
+				245B09F12E4A3E6D00A8F5B0 /* guardianApp.swift */,
+				245B0A242E4A8AB900A8F5B0 /* HUD.swift */,
+				245B0A202E4A895E00A8F5B0 /* SessionManager.swift */,
+				245B0A2E2E4BABC100A8F5B0 /* SettingsManager.swift */,
+				245B0A2A2E4B97F100A8F5B0 /* TitleNormalizer.swift */,
+				245B0A2C2E4B9BDE00A8F5B0 /* TriggerScorer.swift */,
+				245B0A262E4B8F5200A8F5B0 /* URLUtils.swift */,
 				245B09F52E4A3E6E00A8F5B0 /* Assets.xcassets */,
 				245B09FA2E4A3E6E00A8F5B0 /* guardian.entitlements */,
 				245B09F72E4A3E6E00A8F5B0 /* Preview Content */,
@@ -271,8 +286,13 @@
 				245B0A1F2E4A3FB500A8F5B0 /* ContextManager.swift in Sources */,
 				245B0A252E4A8AB900A8F5B0 /* HUD.swift in Sources */,
 				245B09F42E4A3E6D00A8F5B0 /* ContentView.swift in Sources */,
+				245B0A292E4B958D00A8F5B0 /* DomainCatalog.swift in Sources */,
+				245B0A272E4B8F5200A8F5B0 /* URLUtils.swift in Sources */,
+				245B0A2B2E4B97F100A8F5B0 /* TitleNormalizer.swift in Sources */,
+				245B0A2F2E4BABC100A8F5B0 /* SettingsManager.swift in Sources */,
 				245B0A212E4A895E00A8F5B0 /* SessionManager.swift in Sources */,
 				245B09F22E4A3E6D00A8F5B0 /* guardianApp.swift in Sources */,
+				245B0A2D2E4B9BDE00A8F5B0 /* TriggerScorer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
