@@ -3,8 +3,6 @@ import Combine
 
 struct ContentView: View {
     @EnvironmentObject var session: SessionManager
-
-    // Shared singletons observed for live debug + updates
     @ObservedObject var ctx = ContextManager.shared
     @ObservedObject var scorer = TriggerScorer.shared
     @ObservedObject var settings = SettingsManager.shared
@@ -12,32 +10,27 @@ struct ContentView: View {
     @State private var localTask: String = ""
 
     var body: some View {
-        Group {
-            switch session.mode {
-            case .idle:
-                idleView
-            case .active:
-                activeView
+        VStack(spacing: 18) {
+            header
+
+            Group {
+                switch session.mode {
+                case .idle: idleCard
+                case .active: activeCard
+                }
             }
+
+            debugPanel
         }
-        .frame(minWidth: 720, minHeight: 460)
         .padding(24)
+        .frame(minWidth: 760, minHeight: 520)
         .onAppear {
-            // Sync the input field
             localTask = session.taskTitle
-
-            // Hook HUD stop → session.stopSession
-            HUDManager.shared.onStopRequested = { [weak session] in
-                session?.stopSession()
-            }
-
-            // Start context capture and bind the scorer here (moved from App)
+            HUDManager.shared.onStopRequested = { [weak session] in session?.stopSession() }
             ContextManager.shared.start()
             TriggerScorer.shared.bind(to: session)
         }
-        .onDisappear {
-            ContextManager.shared.stop()
-        }
+        .onDisappear { ContextManager.shared.stop() }
         .onChange(of: session.mode) { _, newMode in
             switch newMode {
             case .active:
@@ -54,95 +47,116 @@ struct ContentView: View {
                 HUDManager.shared.hide()
             }
         }
-        // Show a nudge when the scorer declares an off-task verdict
         .onReceive(TriggerScorer.shared.$verdict) { verdict in
             guard session.mode == .active else { return }
             if verdict == .offTask {
-                let msg = makeNudgeMessage(
-                    task: session.taskTitle,
-                    ctx: ContextManager.shared,
-                    reason: TriggerScorer.shared.reason
-                )
+                let msg = makeNudgeMessage(task: session.taskTitle, ctx: ContextManager.shared, reason: TriggerScorer.shared.reason)
                 HUDManager.shared.flashNudge(msg)
             }
         }
     }
 
-    // MARK: - Idle
+    // MARK: - Header
 
-    private var idleView: some View {
-        VStack(alignment: .leading, spacing: 16) {
+    private var header: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle().fill(LinearGradient(colors: [.accentColor.opacity(0.9), .blue.opacity(0.8)],
+                                             startPoint: .topLeading, endPoint: .bottomTrailing))
+                Image(systemName: "shield.lefthalf.fill")
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, .white.opacity(0.8))
+            }
+            .frame(width: 32, height: 32)
+            Text("Guardian")
+                .font(.system(size: 20, weight: .semibold, design: .rounded))
+            Spacer()
+        }
+        .padding(.bottom, 4)
+    }
+
+    // MARK: - Idle Card
+
+    private var idleCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
             Text("What are you working on?")
-                .font(.title)
-                .bold()
+                .font(.title2).bold()
 
-            TextField("e.g., Studying LeetCode", text: $localTask)
-                .textFieldStyle(.roundedBorder)
+            HStack(spacing: 10) {
+                TextField("e.g., Practice LeetCode problems", text: $localTask)
+                    .textFieldStyle(PillTextFieldStyle()) // ← custom style from UIStyles.swift
 
-            HStack(spacing: 12) {
                 Button {
                     session.startSession(with: localTask)
                 } label: {
-                    Text("Start work session")
-                        .frame(maxWidth: .infinity)
+                    HStack(spacing: 6) {
+                        Image(systemName: "play.fill")
+                        Text("Start")
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.defaultAction)
+                .buttonStyle(PrimaryButtonStyle())
 
                 Button("Clear") {
                     localTask = ""
                     session.taskTitle = ""
                 }
+                .buttonStyle(SecondaryButtonStyle())
             }
-
-            Divider().padding(.vertical, 8)
-
-            debugContextBlock
-
-            Spacer()
         }
+        .padding(18)
+        .glassCard()
     }
 
-    // MARK: - Active (main window stays open to show debug)
+    // MARK: - Active Card
 
-    private var activeView: some View {
+    private var activeCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Session active").font(.title2).bold()
-            Text("Task: \(session.taskTitle)").font(.headline)
-            if let start = session.sessionStart {
-                Text("Started at \(start.formatted(date: .omitted, time: .shortened))")
-                    .foregroundColor(.secondary)
-            }
-
-            HStack(spacing: 12) {
-                Button("Stop session") {
-                    session.stopSession()
-                }
-                .buttonStyle(.bordered)
-                Button("Show HUD") {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Session active").font(.title3).bold()
+                    Text(session.taskTitle).font(.headline)
                     if let start = session.sessionStart {
-                        HUDManager.shared.show(task: session.taskTitle, start: start)
+                        Text("Started at \(start.formatted(date: .omitted, time: .shortened))")
+                            .foregroundColor(.secondary).font(.caption)
                     }
                 }
-                Button("Hide HUD") {
-                    HUDManager.shared.hide()
+                Spacer()
+                HStack(spacing: 8) {
+                    Button("Show HUD") {
+                        if let start = session.sessionStart {
+                            HUDManager.shared.show(task: session.taskTitle, start: start)
+                        }
+                    }.buttonStyle(SecondaryButtonStyle())
+
+                    Button("Hide HUD") {
+                        HUDManager.shared.hide()
+                    }.buttonStyle(SecondaryButtonStyle())
+
+                    Button(role: .destructive) {
+                        session.stopSession()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "stop.fill")
+                            Text("Stop")
+                        }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
                 }
             }
-            .padding(.bottom, 8)
 
-            Divider()
+            Divider().padding(.vertical, 4)
 
-            debugContextBlock
-
-            Spacer()
+            liveContextBlock
         }
+        .padding(18)
+        .glassCard()
     }
 
-    // MARK: - Shared debug block
+    // MARK: - Live Context & Scoring
 
-    private var debugContextBlock: some View {
+    private var liveContextBlock: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Live Context (debug)").font(.headline)
+            Text("Live Context").font(.headline)
             Group {
                 Text("Frontmost App: \(ctx.appName)")
                 Text("Bundle ID: \(ctx.bundleID)")
@@ -157,8 +171,13 @@ struct ContentView: View {
             }
             .font(.callout)
             .monospaced()
+        }
+    }
 
-            Divider().padding(.vertical, 6)
+    private var debugPanel: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Divider().padding(.vertical, 4)
+            Text("Scoring & Diagnostics").font(.headline)
 
             Group {
                 Text("Verdict: \(scorer.verdict.rawValue)")
@@ -169,17 +188,14 @@ struct ContentView: View {
             .font(.callout)
             .monospaced()
 
-            // Scoring settings (live-tunable)
             Divider().padding(.vertical, 6)
-            Text("Scoring Settings").font(.headline)
+            Text("Scoring Settings").font(.subheadline).foregroundStyle(.secondary)
 
             HStack(alignment: .top, spacing: 24) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Grace (seconds)")
                     Slider(value: $settings.graceSeconds, in: 0...120, step: 5)
-                    Text("\(Int(settings.graceSeconds))s")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    Text("\(Int(settings.graceSeconds))s").font(.caption).foregroundColor(.secondary)
                 }
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Persistence (polls)")
@@ -190,24 +206,19 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Cooldown (seconds)")
                     Slider(value: $settings.cooldownSeconds, in: 0...300, step: 5)
-                    Text("\(Int(settings.cooldownSeconds))s")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    Text("\(Int(settings.cooldownSeconds))s").font(.caption).foregroundColor(.secondary)
                 }
+                Spacer()
             }
             .font(.callout)
         }
     }
 }
 
-// MARK: - Nudge message helper (file-scope)
+// MARK: - Nudge message helper
 
 private func makeNudgeMessage(task: String, ctx: ContextManager, reason: String) -> String {
-    if !ctx.urlDisplay.isEmpty {
-        return "Still on \(task)? (\(ctx.urlDisplay))"
-    }
-    if !ctx.windowTitleClean.isEmpty {
-        return "Back to \(task)? — \(ctx.windowTitleClean)"
-    }
+    if !ctx.urlDisplay.isEmpty { return "Still on \(task)? (\(ctx.urlDisplay))" }
+    if !ctx.windowTitleClean.isEmpty { return "Back to \(task)? — \(ctx.windowTitleClean)" }
     return "Still working on \(task)?"
 }

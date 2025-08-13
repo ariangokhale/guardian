@@ -19,7 +19,7 @@ final class HUDWindow: NSPanel, NSWindowDelegate {
         titlebarAppearsTransparent = true
         animationBehavior = .utilityWindow
         hidesOnDeactivate = false
-        isMovableByWindowBackground = true   // drag anywhere to move
+        isMovableByWindowBackground = true
         isExcludedFromWindowsMenu = true
         ignoresMouseEvents = false
         delegate = self
@@ -28,7 +28,6 @@ final class HUDWindow: NSPanel, NSWindowDelegate {
         host.wantsLayer = true
         contentView = host
 
-        // Place at saved position or default corner
         let startFrame = loadStartFrame() ?? defaultFrame()
         setFrame(startFrame, display: false)
         orderFrontRegardless()
@@ -36,7 +35,7 @@ final class HUDWindow: NSPanel, NSWindowDelegate {
 
     private func defaultFrame() -> NSRect {
         let screen = NSScreen.main?.visibleFrame ?? .init(x: 0, y: 0, width: 800, height: 600)
-        let size = NSSize(width: 320, height: 72)
+        let size = NSSize(width: GuardianTheme.hudWidth, height: GuardianTheme.hudHeightCompact)
         return NSRect(
             x: screen.maxX - size.width - 16,
             y: screen.maxY - size.height - 16,
@@ -46,7 +45,6 @@ final class HUDWindow: NSPanel, NSWindowDelegate {
 
     func setSize(_ size: CGSize, animate: Bool = true) {
         var f = frame
-        // anchor bottom-right while resizing
         f.origin.x += (f.width - size.width)
         f.origin.y += (f.height - size.height)
         f.size = size
@@ -54,93 +52,64 @@ final class HUDWindow: NSPanel, NSWindowDelegate {
         saveOrigin(f.origin)
     }
 
-    // Persist & restore origin
     private func saveOrigin(_ origin: NSPoint) {
         UserDefaults.standard.set([origin.x, origin.y], forKey: defaultsKey)
     }
     private func loadStartFrame() -> NSRect? {
-        guard
-            let arr = UserDefaults.standard.array(forKey: defaultsKey) as? [CGFloat],
-            arr.count == 2
-        else { return nil }
-        let size = NSSize(width: 320, height: 72)
+        guard let arr = UserDefaults.standard.array(forKey: defaultsKey) as? [CGFloat], arr.count == 2 else { return nil }
+        let size = NSSize(width: GuardianTheme.hudWidth, height: GuardianTheme.hudHeightCompact)
         return NSRect(x: arr[0], y: arr[1], width: size.width, height: size.height)
     }
 
-    // Save when user drags the window
-    func windowDidMove(_ notification: Notification) {
-        saveOrigin(frame.origin)
-    }
+    func windowDidMove(_ notification: Notification) { saveOrigin(frame.origin) }
 }
 
 // MARK: - Manager
 
-struct Nudge: Identifiable, Equatable {
-    let id = UUID()
-    let text: String
-}
+struct Nudge: Identifiable, Equatable { let id = UUID(); let text: String }
 
 final class HUDManager: ObservableObject {
     static let shared = HUDManager()
     private var window: HUDWindow?
 
-    // Sizes
-    private let compactSize = CGSize(width: 320, height: 72)
-    private let expandedHeight: CGFloat = 116   // compact + message row
-    private var expandedSize: CGSize { .init(width: compactSize.width, height: expandedHeight) }
+    private var compactSize: CGSize { .init(width: GuardianTheme.hudWidth, height: GuardianTheme.hudHeightCompact) }
+    private var expandedSize: CGSize { .init(width: GuardianTheme.hudWidth, height: GuardianTheme.hudHeightExpanded) }
 
     @Published var taskTitle: String = ""
     @Published var sessionStart: Date?
-    @Published var currentNudge: Nudge?            // nudge to display
+    @Published var currentNudge: Nudge?
 
-    /// Set by the main UI to handle "Stop session" coming from the HUD.
     var onStopRequested: (() -> Void)?
 
     func show(task: String, start: Date) {
         taskTitle = task
         sessionStart = start
         if window == nil {
-            window = HUDWindow {
-                HUDView().environmentObject(self)
-            }
+            window = HUDWindow { HUDView().environmentObject(self) }
         } else {
             window?.orderFrontRegardless()
         }
-        // Ensure correct size every time we show
         window?.setSize(compactSize, animate: false)
     }
 
-    func hide() {
-        window?.orderOut(nil)
-        window = nil
-    }
+    func hide() { window?.orderOut(nil); window = nil }
 
-    /// Animated show that slides the HUD from the main window's frame to the top-right.
     func showAnimated(from sourceFrame: NSRect, fadeMainWindow: Bool = false) {
         let start = sessionStart ?? Date()
         if window == nil {
-            // Create HUD window starting at the main window’s frame
-            window = HUDWindow {
-                HUDView().environmentObject(self)
-            }
-            window?.setFrame(sourceFrame, display: false) // start exactly where the main window is
+            window = HUDWindow { HUDView().environmentObject(self) }
+            window?.setFrame(sourceFrame, display: false)
         }
-
-        // target size/pos (top-right). reuse helper by setting final size first
         window?.setSize(compactSize, animate: false)
         guard let hud = window else { return }
 
-        // compute final rect anchored to screen’s top-right (same as defaultFrame)
         let screen = hud.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 800, height: 600)
-        let final = NSRect(x: screen.maxX - compactSize.width - 16,
-                           y: screen.maxY - compactSize.height - 16,
+        let final = NSRect(x: screen.maxX - compactSize.width - 16, y: screen.maxY - compactSize.height - 16,
                            width: compactSize.width, height: compactSize.height)
 
-        // optionally fade main window (purely cosmetic)
         let main = NSApp.keyWindow
         if fadeMainWindow { main?.animator().alphaValue = 0.85 }
 
-        // ensure HUD is on top and visible, then animate to final rect
         hud.orderFrontRegardless()
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.allowsImplicitAnimation = true
@@ -155,34 +124,22 @@ final class HUDManager: ObservableObject {
             }
         }
 
-        // keep model in sync
-        taskTitle = taskTitle.isEmpty ? (taskTitle) : taskTitle
+        taskTitle = taskTitle.isEmpty ? taskTitle : taskTitle
         sessionStart = start
     }
 
-    /// Show a temporary nudge message:
-    /// 1) Expand window
-    /// 2) Show message
-    /// 3) Auto-collapse after `duration`
     func flashNudge(_ text: String, duration: TimeInterval = 2.5) {
         DispatchQueue.main.async {
-            // 1) Expand the HUD window to make room for message row
             self.resize(expanded: true)
-
-            // 2) Set the nudge (animates in the view)
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
                 self.currentNudge = Nudge(text: text)
             }
-
-            // 3) Auto-clear and collapse
             DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
-                // Only clear if unchanged
                 if self.currentNudge?.text == text {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
                         self.currentNudge = nil
                     }
-                    // Collapse a tick after animation starts to avoid clipping
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) {
                         self.resize(expanded: false)
                     }
                 }
@@ -191,8 +148,7 @@ final class HUDManager: ObservableObject {
     }
 
     private func resize(expanded: Bool) {
-        let target = expanded ? expandedSize : compactSize
-        window?.setSize(target, animate: true)
+        window?.setSize(expanded ? expandedSize : compactSize, animate: true)
     }
 }
 
@@ -205,12 +161,11 @@ struct HUDView: View {
         VStack(spacing: 8) {
             // Main row
             HStack(spacing: 10) {
-                ProgressRing(progress: 0.75, size: 24) // decorative placeholder
+                ProgressRing(progress: 0.75, size: 24)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(hud.taskTitle.isEmpty ? "Working…" : hud.taskTitle)
                         .font(.headline)
                         .lineLimit(1)
-                    // Live timer that ticks every second
                     TimelineView(.periodic(from: .now, by: 1.0)) { _ in
                         Text(elapsedString)
                             .font(.caption)
@@ -224,39 +179,42 @@ struct HUDView: View {
                     HUDManager.shared.hide()
                 }
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 12)
             .padding(.top, 10)
 
-            // Message row (revealed when expanded)
+            // Divider that appears only when expanded
+            if hud.currentNudge != nil {
+                Divider().opacity(0.5).padding(.horizontal, 10)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
+            // Message row
             if let nudge = hud.currentNudge {
                 HStack(spacing: 8) {
                     Image(systemName: "arrow.uturn.backward")
                         .imageScale(.small)
-                        .opacity(0.8)
+                        .opacity(0.85)
                     Text(nudge.text)
                         .font(.caption)
                         .lineLimit(2)
                     Spacer(minLength: 0)
                 }
-                .padding(.horizontal, 10)
-                .padding(.bottom, 8)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 10)
                 .transition(.move(edge: .top).combined(with: .opacity))
-                .animation(.spring(response: 0.35, dampingFraction: 0.9), value: nudge.id)
-            } else {
-                // Reserve no space when no nudge; the window is compact anyway.
-                EmptyView()
             }
         }
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: GuardianTheme.cardRadius, style: .continuous)
                 .fill(.ultraThinMaterial)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(.white.opacity(0.08))
+            RoundedRectangle(cornerRadius: GuardianTheme.cardRadius, style: .continuous)
+                .strokeBorder(.white.opacity(0.09))
         )
-        .onAppear { (NSApp.keyWindow as? HUDWindow)?.setSize(CGSize(width: 320, height: 72)) }
-        .frame(width: 320) // lock width to match window sizing
+        .shadow(color: .black.opacity(0.2), radius: 18, x: 0, y: 12)
+        .frame(width: GuardianTheme.hudWidth)
+        .onAppear { (NSApp.keyWindow as? HUDWindow)?.setSize(CGSize(width: GuardianTheme.hudWidth, height: GuardianTheme.hudHeightCompact)) }
     }
 
     private var elapsedString: String {
@@ -279,6 +237,7 @@ struct HUDButton: View {
         .buttonStyle(.plain)
         .padding(6)
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.white.opacity(0.12)))
     }
 }
 
@@ -290,7 +249,8 @@ struct ProgressRing: View {
             Circle().stroke(Color.secondary.opacity(0.25), lineWidth: 3)
             Circle()
                 .trim(from: 0, to: max(0, min(1, progress)))
-                .stroke(Color.primary.opacity(0.85), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                .stroke(AngularGradient(gradient: Gradient(colors: [GuardianTheme.accent.opacity(0.95), .blue.opacity(0.9)]), center: .center),
+                        style: StrokeStyle(lineWidth: 3, lineCap: .round))
                 .rotationEffect(.degrees(-90))
         }
         .frame(width: size, height: size)
