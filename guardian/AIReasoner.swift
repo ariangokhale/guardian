@@ -24,24 +24,30 @@ final class AIReasoner {
     static let shared = AIReasoner()
     private var bag = Set<AnyCancellable>()
     private var inFlight: Set<String> = []
-    private var recent: [String: Date] = [:]       // hashKey -> last time asked
-    private let minGap: TimeInterval = 20          // don't re-ask within 20s
-    private let minConfidence: Double = 0.55       // tweak later or expose in settings
-    
+    private var recent: [String: Date] = [:]
+    private let minGap: TimeInterval = 20
+    private let minConfidence: Double = 0.55
+
+    private var isBound = false   // ⬅️ add
+
     func bind(to scorer: TriggerScorer, session: SessionManager) {
+        guard !isBound else { return } // ⬅️ prevent duplicate subscriptions
+        isBound = true
         scorer.aiRequests
-            .removeDuplicates()
+            // coalesce identical contexts
+            .removeDuplicates(by: { $0.hashKey == $1.hashKey })       // ⬅️ new
+            .throttle(for: .seconds(1.0), scheduler: RunLoop.main, latest: true) // ⬅️ new
             .filter { [weak self] input in
                 guard let self else { return true }
-                // rate-limit by hash + time window
                 if let last = recent[input.hashKey], Date().timeIntervalSince(last) < minGap { return false }
                 if inFlight.contains(input.hashKey) { return false }
                 return true
             }
             .sink { [weak self] input in
-                self?.recent[input.hashKey] = Date()
-                self?.inFlight.insert(input.hashKey)
-                self?.callAI(input: input, scorer: scorer, session: session)
+                guard let self else { return }
+                recent[input.hashKey] = Date()
+                inFlight.insert(input.hashKey)
+                self.callAI(input: input, scorer: scorer, session: session)
             }
             .store(in: &bag)
     }
