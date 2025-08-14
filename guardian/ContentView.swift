@@ -9,6 +9,9 @@ struct ContentView: View {
 
     @State private var localTask: String = ""
 
+    // Feature flag
+    private let showDiagnostics = false // Toggle to true for dev/debug
+
     var body: some View {
         VStack(spacing: 18) {
             header
@@ -20,10 +23,18 @@ struct ContentView: View {
                 }
             }
 
-            debugPanel
+            // Always-visible sections
+            messagePersonalization
+            timingControls
+
+            // Only show scoring & diagnostics if flag is on
+            if showDiagnostics {
+                debugPanel
+            }
         }
         .padding(24)
         .frame(minWidth: 760, minHeight: 520)
+        .cleanWindow()
         .onAppear {
             localTask = session.taskTitle
             HUDManager.shared.onStopRequested = { [weak session] in session?.stopSession() }
@@ -55,7 +66,7 @@ struct ContentView: View {
     private var header: some View {
         HStack(spacing: 10) {
             ZStack {
-                Circle().fill(LinearGradient(colors: [.accentColor.opacity(0.9), .blue.opacity(0.8)],
+                Circle().fill(LinearGradient(colors: [GuardianTheme.primaryOrange, GuardianTheme.primaryOrange.opacity(0.8)],
                                              startPoint: .topLeading, endPoint: .bottomTrailing))
                 Image(systemName: "shield.lefthalf.fill")
                     .symbolRenderingMode(.palette)
@@ -64,6 +75,7 @@ struct ContentView: View {
             .frame(width: 32, height: 32)
             Text("Guardian")
                 .font(.system(size: 20, weight: .semibold, design: .rounded))
+                .foregroundColor(GuardianTheme.textPrimary)
             Spacer()
         }
         .padding(.bottom, 4)
@@ -74,11 +86,11 @@ struct ContentView: View {
     private var idleCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("What are you working on?")
-                .font(.title2).bold()
+                .font(.system(size: 22, weight: .semibold, design: .rounded))
+                .foregroundColor(GuardianTheme.textPrimary)
 
             HStack(spacing: 10) {
-                TextField("e.g., Practice LeetCode problems", text: $localTask)
-                    .textFieldStyle(PillTextFieldStyle()) // ← custom style from UIStyles.swift
+                PlaceholderTextField(placeholder: "e.g., Practice LeetCode problems", text: $localTask)
 
                 Button {
                     session.startSession(with: localTask)
@@ -98,7 +110,7 @@ struct ContentView: View {
             }
         }
         .padding(18)
-        .glassCard()
+        .cleanCard()
     }
 
     // MARK: - Active Card
@@ -107,11 +119,13 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Session active").font(.title3).bold()
+                    Text("Session active").font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundColor(GuardianTheme.textPrimary)
                     Text(session.taskTitle).font(.headline)
+                        .foregroundColor(GuardianTheme.textPrimary)
                     if let start = session.sessionStart {
                         Text("Started at \(start.formatted(date: .omitted, time: .shortened))")
-                            .foregroundColor(.secondary).font(.caption)
+                            .foregroundColor(GuardianTheme.textSecondary).font(.caption)
                     }
                 }
                 Spacer()
@@ -143,14 +157,15 @@ struct ContentView: View {
             liveContextBlock
         }
         .padding(18)
-        .glassCard()
+        .cleanCard()
     }
 
-    // MARK: - Live Context & Scoring
+    // MARK: - Live Context
 
     private var liveContextBlock: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Live Context").font(.headline)
+                .foregroundColor(GuardianTheme.textPrimary)
             Group {
                 Text("Frontmost App: \(ctx.appName)")
                 Text("Bundle ID: \(ctx.bundleID)")
@@ -165,33 +180,109 @@ struct ContentView: View {
             }
             .font(.callout)
             .monospaced()
+            .foregroundColor(GuardianTheme.textPrimary)
         }
     }
+
+    // MARK: - Always-visible Message Style & Tone
+
+    private var messagePersonalization: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Divider().padding(.vertical, 4)
+            Text("Message Personalization").font(.headline)
+                .foregroundColor(GuardianTheme.textPrimary)
+
+            HStack(spacing: 16) {
+                SleekSegmentedPickerStyle(
+                    options: [
+                        ("Buddy", "buddy"),
+                        ("Coach", "coach"),
+                        ("Gentle", "gentle"),
+                        ("Direct", "direct")
+                    ],
+                    selection: $settings.nudgeTone
+                )
+
+                PlaceholderTextField(placeholder: "Persona name (optional)", text: $settings.personaName)
+                    .frame(maxWidth: 220)
+            }
+            .font(.callout)
+        }
+    }
+
+    // MARK: - Always-visible Focus Timing
+
+    private var timingControls: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Divider().padding(.vertical, 4)
+            Text("Focus Timing").font(.headline)
+                .foregroundColor(GuardianTheme.textPrimary)
+
+            HStack(alignment: .top, spacing: 16) {
+                VStack(alignment: .center, spacing: 10) {
+                    Text("Warm-Up Time")
+                        .foregroundColor(GuardianTheme.textPrimary)
+                        .frame(maxWidth: .infinity)
+                    Slider(value: $settings.graceSeconds, in: 0...120, step: 5)
+                        .tint(GuardianTheme.primaryOrange)
+                    Text("\(Int(settings.graceSeconds)) seconds before monitoring distractions")
+                        .font(.caption).foregroundColor(GuardianTheme.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .multilineTextAlignment(.center)
+                }
+                .timingCard()
+                .frame(maxWidth: .infinity)
+                VStack(alignment: .center, spacing: 10) {
+                    Text("Patience Level")
+                        .foregroundColor(GuardianTheme.textPrimary)
+                        .frame(maxWidth: .infinity)
+                    HStack(spacing: 8) {
+                        Button(action: { if settings.persistenceRequired > 1 { settings.persistenceRequired -= 1 } }) {
+                            Image(systemName: "minus")
+                        }
+                        .buttonStyle(MiniCapsuleButtonStyle())
+                        Text("\(settings.persistenceRequired)")
+                            .monospacedDigit()
+                            .foregroundColor(GuardianTheme.textPrimary)
+                        Button(action: { if settings.persistenceRequired < 10 { settings.persistenceRequired += 1 } }) {
+                            Image(systemName: "plus")
+                        }
+                        .buttonStyle(MiniCapsuleButtonStyle())
+                    }
+                    Text("Needs \(settings.persistenceRequired) consecutive off-task checks")
+                        .font(.caption)
+                        .foregroundColor(GuardianTheme.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .multilineTextAlignment(.center)
+                }
+                .timingCard()
+                .frame(maxWidth: .infinity)
+                VStack(alignment: .center, spacing: 10) {
+                    Text("Quiet Time Between Messages")
+                        .foregroundColor(GuardianTheme.textPrimary)
+                        .frame(maxWidth: .infinity)
+                    Slider(value: $settings.cooldownSeconds, in: 0...300, step: 5)
+                        .tint(GuardianTheme.primaryOrange)
+                    Text("At least \(Int(settings.cooldownSeconds)) seconds between nudges")
+                        .font(.caption)
+                        .foregroundColor(GuardianTheme.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .multilineTextAlignment(.center)
+                }
+                .timingCard()
+                .frame(maxWidth: .infinity)
+            }
+            .font(.callout)
+        }
+    }
+
+    // MARK: - Diagnostics (Optional)
 
     private var debugPanel: some View {
         VStack(alignment: .leading, spacing: 6) {
             Divider().padding(.vertical, 4)
             Text("Scoring & Diagnostics").font(.headline)
-            
-            Divider().padding(.vertical, 6)
-            Text("Nudge Style").font(.subheadline).foregroundStyle(.secondary)
-
-            HStack(spacing: 16) {
-                Picker("Tone", selection: $settings.nudgeTone) {
-                    Text("Buddy").tag("buddy")
-                    Text("Coach").tag("coach")
-                    Text("Gentle").tag("gentle")
-                    Text("Direct").tag("direct")
-                }
-                .pickerStyle(.segmented)
-                Toggle("Emojis", isOn: $settings.nudgeEmojis).toggleStyle(.switch)
-
-                TextField("Persona name (optional)", text: $settings.personaName)
-                    .textFieldStyle(PillTextFieldStyle())
-                    .frame(maxWidth: 220)
-            }
-            .font(.callout)
-
+                .foregroundColor(GuardianTheme.textPrimary)
 
             Group {
                 Text("Verdict: \(scorer.verdict.rawValue)")
@@ -201,30 +292,7 @@ struct ContentView: View {
             }
             .font(.callout)
             .monospaced()
-
-            Divider().padding(.vertical, 6)
-            Text("Scoring Settings").font(.subheadline).foregroundStyle(.secondary)
-
-            HStack(alignment: .top, spacing: 24) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Grace (seconds)")
-                    Slider(value: $settings.graceSeconds, in: 0...120, step: 5)
-                    Text("\(Int(settings.graceSeconds))s").font(.caption).foregroundColor(.secondary)
-                }
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Persistence (polls)")
-                    Stepper(value: $settings.persistenceRequired, in: 1...10) {
-                        Text("\(settings.persistenceRequired)x")
-                    }
-                }
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Cooldown (seconds)")
-                    Slider(value: $settings.cooldownSeconds, in: 0...300, step: 5)
-                    Text("\(Int(settings.cooldownSeconds))s").font(.caption).foregroundColor(.secondary)
-                }
-                Spacer()
-            }
-            .font(.callout)
+            .foregroundColor(GuardianTheme.textPrimary)
         }
     }
 }

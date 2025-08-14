@@ -194,12 +194,13 @@ struct HUDView: View {
                 ProgressRing(progress: 0.75, size: 24)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(hud.taskTitle.isEmpty ? "Working…" : hud.taskTitle)
-                        .font(.headline)
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundColor(GuardianTheme.textPrimary)
                         .lineLimit(1)
                     TimelineView(.periodic(from: .now, by: 1.0)) { _ in
                         Text(elapsedString)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .font(.system(size: 12, weight: .regular, design: .rounded))
+                            .foregroundColor(GuardianTheme.textSecondary)
                             .monospacedDigit()
                     }
                 }
@@ -214,7 +215,9 @@ struct HUDView: View {
 
             // Divider that appears only when expanded
             if hud.currentNudge != nil {
-                Divider().opacity(0.5).padding(.horizontal, 10)
+                Divider()
+                    .background(GuardianTheme.borderColor)
+                    .padding(.horizontal, 10)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
@@ -223,9 +226,10 @@ struct HUDView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "arrow.uturn.backward")
                         .imageScale(.small)
-                        .opacity(0.85)
+                        .foregroundColor(GuardianTheme.primaryOrange)
                     Text(nudge.text)
                         .font(.caption)
+                        .foregroundColor(GuardianTheme.textPrimary)
                         .lineLimit(2)
                     Spacer(minLength: 0)
                 }
@@ -236,13 +240,13 @@ struct HUDView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: GuardianTheme.cardRadius, style: .continuous)
-                .fill(.ultraThinMaterial)
+                .fill(GuardianTheme.cardBackground)
         )
         .overlay(
             RoundedRectangle(cornerRadius: GuardianTheme.cardRadius, style: .continuous)
-                .strokeBorder(.white.opacity(0.09))
+                .strokeBorder(GuardianTheme.borderColor, lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.2), radius: 18, x: 0, y: 12)
+        .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
         .frame(width: GuardianTheme.hudWidth)
         .onAppear { (NSApp.keyWindow as? HUDWindow)?.setSize(CGSize(width: GuardianTheme.hudWidth, height: GuardianTheme.hudHeightCompact)) }
     }
@@ -262,12 +266,14 @@ struct HUDButton: View {
     var action: () -> Void
     var body: some View {
         Button(action: action) {
-            Image(systemName: symbol).imageScale(.small)
+            Image(systemName: symbol)
+                .imageScale(.small)
+                .foregroundColor(GuardianTheme.textSecondary)
         }
         .buttonStyle(.plain)
         .padding(6)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.white.opacity(0.12)))
+        .background(GuardianTheme.lightOrange, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(GuardianTheme.borderColor))
     }
 }
 
@@ -276,10 +282,10 @@ struct ProgressRing: View {
     let size: CGFloat
     var body: some View {
         ZStack {
-            Circle().stroke(Color.secondary.opacity(0.25), lineWidth: 3)
+            Circle().stroke(GuardianTheme.borderColor, lineWidth: 3)
             Circle()
                 .trim(from: 0, to: max(0, min(1, progress)))
-                .stroke(AngularGradient(gradient: Gradient(colors: [GuardianTheme.accent.opacity(0.95), .blue.opacity(0.9)]), center: .center),
+                .stroke(AngularGradient(gradient: Gradient(colors: [GuardianTheme.primaryOrange, GuardianTheme.primaryOrange.opacity(0.7)]), center: .center),
                         style: StrokeStyle(lineWidth: 3, lineCap: .round))
                 .rotationEffect(.degrees(-90))
         }
