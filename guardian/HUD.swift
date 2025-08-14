@@ -81,6 +81,10 @@ final class HUDManager: ObservableObject {
 
     var onStopRequested: (() -> Void)?
 
+    // NEW: simple de-dupe + timer management
+    private var lastNudges: [String] = []
+    private var clearWorkItem: DispatchWorkItem?
+
     func show(task: String, start: Date) {
         taskTitle = task
         sessionStart = start
@@ -128,23 +132,49 @@ final class HUDManager: ObservableObject {
         sessionStart = start
     }
 
-    func flashNudge(_ text: String, duration: TimeInterval = 2.5) {
+    /// Show a temporary nudge.
+    /// You can pass `alternatives` (e.g., from AI) and we'll pick a fresh one if possible.
+    func flashNudge(_ text: String, alternatives: [String] = [], duration: TimeInterval = 2.5) {
         DispatchQueue.main.async {
+            // Pick a message that isn't in the recent history, if possible
+            let options = [text] + alternatives
+            let chosen = self.pickFresh(from: options)
+
+            // Cancel any pending clear while we replace the message
+            self.clearWorkItem?.cancel()
+
             self.resize(expanded: true)
             withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
-                self.currentNudge = Nudge(text: text)
+                self.currentNudge = Nudge(text: chosen)
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
-                if self.currentNudge?.text == text {
-                    withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
-                        self.currentNudge = nil
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) {
-                        self.resize(expanded: false)
-                    }
+
+            // Remember it (keep only recent few)
+            self.lastNudges.append(chosen)
+            if self.lastNudges.count > 5 { self.lastNudges.removeFirst(self.lastNudges.count - 5) }
+
+            // Schedule clear + collapse
+            let work = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
+                    // Only clear if unchanged (avoid racing a newer nudge)
+                    if self.currentNudge?.text == chosen { self.currentNudge = nil }
+                }
+                // Collapse slightly after fade to avoid clipping
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) {
+                    self.resize(expanded: false)
                 }
             }
+            self.clearWorkItem = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + duration, execute: work)
         }
+    }
+
+    private func pickFresh(from options: [String]) -> String {
+        // Prefer the first option not in recent history; fallback to first
+        if let fresh = options.first(where: { !lastNudges.contains($0) && !$0.isEmpty }) {
+            return fresh
+        }
+        return options.first ?? ""
     }
 
     private func resize(expanded: Bool) {

@@ -23,6 +23,9 @@
 		245B0A2D2E4B9BDE00A8F5B0 /* TriggerScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A2C2E4B9BDE00A8F5B0 /* TriggerScorer.swift */; };
 		245B0A2F2E4BABC100A8F5B0 /* SettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A2E2E4BABC100A8F5B0 /* SettingsManager.swift */; };
 		245B0A312E4BE85A00A8F5B0 /* UIStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A302E4BE85A00A8F5B0 /* UIStyles.swift */; };
+		245B0A332E4CDA2600A8F5B0 /* AIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A322E4CDA2600A8F5B0 /* AIModels.swift */; };
+		245B0A352E4CDA4A00A8F5B0 /* AIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A342E4CDA4A00A8F5B0 /* AIClient.swift */; };
+		245B0A372E4CDA7800A8F5B0 /* AIReasoner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A362E4CDA7800A8F5B0 /* AIReasoner.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -63,6 +66,9 @@
 		245B0A2C2E4B9BDE00A8F5B0 /* TriggerScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TriggerScorer.swift; sourceTree = "<group>"; };
 		245B0A2E2E4BABC100A8F5B0 /* SettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsManager.swift; sourceTree = "<group>"; };
 		245B0A302E4BE85A00A8F5B0 /* UIStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIStyles.swift; sourceTree = "<group>"; };
+		245B0A322E4CDA2600A8F5B0 /* AIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIModels.swift; sourceTree = "<group>"; };
+		245B0A342E4CDA4A00A8F5B0 /* AIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIClient.swift; sourceTree = "<group>"; };
+		245B0A362E4CDA7800A8F5B0 /* AIReasoner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIReasoner.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,6 +119,9 @@
 		245B09F02E4A3E6D00A8F5B0 /* guardian */ = {
 			isa = PBXGroup;
 			children = (
+				245B0A342E4CDA4A00A8F5B0 /* AIClient.swift */,
+				245B0A322E4CDA2600A8F5B0 /* AIModels.swift */,
+				245B0A362E4CDA7800A8F5B0 /* AIReasoner.swift */,
 				245B09F32E4A3E6D00A8F5B0 /* ContentView.swift */,
 				245B0A1E2E4A3FB500A8F5B0 /* ContextManager.swift */,
 				245B0A282E4B958D00A8F5B0 /* DomainCatalog.swift */,
@@ -286,9 +295,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				245B0A372E4CDA7800A8F5B0 /* AIReasoner.swift in Sources */,
+				245B0A352E4CDA4A00A8F5B0 /* AIClient.swift in Sources */,
 				245B0A312E4BE85A00A8F5B0 /* UIStyles.swift in Sources */,
 				245B0A1F2E4A3FB500A8F5B0 /* ContextManager.swift in Sources */,
 				245B0A252E4A8AB900A8F5B0 /* HUD.swift in Sources */,
+				245B0A332E4CDA2600A8F5B0 /* AIModels.swift in Sources */,
 				245B09F42E4A3E6D00A8F5B0 /* ContentView.swift in Sources */,
 				245B0A292E4B958D00A8F5B0 /* DomainCatalog.swift in Sources */,
 				245B0A272E4B8F5200A8F5B0 /* URLUtils.swift in Sources */,

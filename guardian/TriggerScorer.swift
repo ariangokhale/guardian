@@ -5,27 +5,27 @@ import AppKit
 enum Verdict: String {
     case unknown
     case onTask
-    case offTaskCandidate   // locally looks off-task but not persisted yet
-    case offTask            // persisted & out of cooldown
+    case offTaskCandidate
+    case offTask
 }
 
 struct ScorerConfig {
     var graceSeconds: TimeInterval = 20
-    var persistenceRequired: Int = 3        // N consecutive off-task polls
-    var cooldownSeconds: TimeInterval = 45  // min gap between off-task verdicts
+    var persistenceRequired: Int = 3
+    var cooldownSeconds: TimeInterval = 45
 }
 
 final class TriggerScorer: ObservableObject {
     static let shared = TriggerScorer()
 
-    // Inputs (observed)
+    // Inputs
     private let ctx = ContextManager.shared
     private var session: SessionManager?
 
-    // Outputs (observed in debug UI)
+    // Outputs
     @Published var verdict: Verdict = .unknown
     @Published var reason: String = ""
-    @Published var lastNudgeAt: Date? // when we last *could* have nudged (used for cooldown)
+    @Published var lastNudgeAt: Date?
     @Published var consecutiveOffTask: Int = 0
 
     // Config/state
@@ -33,10 +33,13 @@ final class TriggerScorer: ObservableObject {
     private var cancellables: Set<AnyCancellable> = []
     private var taskKeywords: [String] = []
 
-    // Settings (live-tunable)
+    // Settings
     private let settings = SettingsManager.shared
 
-    // Public: bind once per app launch / session object creation
+    // NEW: AI escalation bus
+    let aiRequests = PassthroughSubject<AIInput, Never>()
+    private var sessionAllowlist: Set<String> = [] // hosts the AI okayed for this session
+
     func bind(to session: SessionManager) {
         self.session = session
         setupBindings(session: session)
@@ -45,7 +48,6 @@ final class TriggerScorer: ObservableObject {
     private func setupBindings(session: SessionManager) {
         cancellables.removeAll()
 
-        // Rebuild task keywords when title changes or mode flips
         session.$taskTitle
             .combineLatest(session.$mode)
             .sink { [weak self] (title, mode) in
@@ -53,14 +55,14 @@ final class TriggerScorer: ObservableObject {
                 self.taskKeywords = Self.extractKeywords(from: title)
                 if mode == .idle {
                     self.reset()
+                    self.sessionAllowlist.removeAll()
                 }
             }
             .store(in: &cancellables)
 
-        // Score every time any relevant context piece changes
         Publishers.CombineLatest4(ctx.$bundleID, ctx.$windowTitleClean, ctx.$urlHost, ctx.$urlCategory)
             .combineLatest(session.$mode, session.$sessionStart)
-            .debounce(for: .milliseconds(50), scheduler: RunLoop.main) // coalesce bursts
+            .debounce(for: .milliseconds(50), scheduler: RunLoop.main)
             .sink { [weak self] combined, mode, start in
                 guard let self else { return }
                 guard mode == .active, let start else {
@@ -72,7 +74,6 @@ final class TriggerScorer: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // Live-update config from SettingsManager sliders
         settings.$graceSeconds
             .combineLatest(settings.$persistenceRequired, settings.$cooldownSeconds)
             .sink { [weak self] (grace, persist, cool) in
@@ -90,11 +91,24 @@ final class TriggerScorer: ObservableObject {
         consecutiveOffTask = 0
     }
 
+    // Exposed for AIReasoner
+    func overrideOnTaskFromAI(reason: String) {
+        consecutiveOffTask = 0
+        verdict = .onTask
+        self.reason = reason
+    }
+
+    func addSessionAllowlist(hosts: [String]) {
+        sessionAllowlist.formUnion(hosts.map { $0.lowercased() })
+    }
+
     // MARK: - Core scoring
 
     private func scoreOnce(sessionStart: Date) {
-        // 0) Grace period
         let now = Date()
+        let elapsed = Int(now.timeIntervalSince(sessionStart))
+
+        // 0) Grace
         if now.timeIntervalSince(sessionStart) < config.graceSeconds {
             verdict = .onTask
             reason = "Within grace (\(Int(config.graceSeconds))s)"
@@ -102,30 +116,38 @@ final class TriggerScorer: ObservableObject {
             return
         }
 
-        // 1) Build features
+        // 1) Features
         let app = ctx.appName.lowercased()
         let title = ctx.windowTitleClean.lowercased()
         let host = ctx.urlHost.lowercased()
         let display = ctx.urlDisplay.lowercased()
         let cat = ctx.urlCategory
-
         let isBrowser = !host.isEmpty
+
+        // Allowlist short-circuit
+        if !host.isEmpty, sessionAllowlist.contains(host) {
+            verdict = .onTask
+            reason = "AI-allowed host"
+            consecutiveOffTask = 0
+            return
+        }
+
         let isDevApp = app.contains("xcode")
-            || app.contains("code") // VS Code
+            || app.contains("code")
             || app.contains("cursor")
             || app.contains("terminal")
             || app.contains("iterm")
             || app.contains("intellij")
             || app.contains("pycharm")
 
-        // 2) Quick “likely on-task” checks
+        // 2) Likely on-task
         if isDevApp {
             verdict = .onTask
             reason = "Dev app: \(app)"
             consecutiveOffTask = 0
             return
         }
-        if cat == .coding || cat == .docs || cat == .productivity || cat == .ai || cat == .cloud || cat == .search || cat == .storage {
+        if [.coding,.docs,.productivity,.ai,.cloud,.search,.storage].contains(cat) {
             if containsDistractor(title: title, host: host) == false {
                 verdict = .onTask
                 reason = "Work category: \(cat.rawValue)"
@@ -134,7 +156,7 @@ final class TriggerScorer: ObservableObject {
             }
         }
 
-        // 3) Keyword match against title/url for task relevance
+        // 3) Task keyword hits
         let hasKeywordHit = Self.matchesAnyKeyword(taskKeywords, in: title) || Self.matchesAnyKeyword(taskKeywords, in: display)
 
         // 4) Off-task heuristic
@@ -159,13 +181,28 @@ final class TriggerScorer: ObservableObject {
             }
         }
 
-        // Special: YouTube edge
         if host.contains("youtube") && !hasKeywordHit {
             looksOffTask = true
             why = "YouTube no task match"
         }
 
-        // 5) Persistence & cooldown -> verdict
+        // NEW: Escalate to AI for ambiguous/off-task candidates (before we finalize)
+        if looksOffTask || cat == .other {
+            let input = AIInput(
+                task: session?.taskTitle ?? "",
+                appName: ctx.appName,
+                bundleID: ctx.bundleID,
+                windowTitle: ctx.windowTitleClean,
+                urlHost: ctx.urlHost,
+                urlPath: ctx.urlPathShort,
+                urlDisplay: ctx.urlDisplay,
+                domainCategory: cat.rawValue,
+                elapsedSeconds: elapsed
+            )
+            aiRequests.send(input)
+        }
+
+        // 5) Persistence & cooldown → verdict
         if looksOffTask {
             consecutiveOffTask += 1
             if consecutiveOffTask >= config.persistenceRequired {
@@ -189,12 +226,12 @@ final class TriggerScorer: ObservableObject {
         }
     }
 
-    // MARK: - Text helpers
+    // MARK: - Text helpers (unchanged)
 
     private static func extractKeywords(from s: String) -> [String] {
         let lowered = s.lowercased()
         let tokens = lowered.split { !$0.isLetter && !$0.isNumber }.map(String.init)
-        let stop: Set<String> = ["the","and","a","an","to","of","for","on","in","with","at","by","is","are","be","this","that","it","work","session","study","studying"]
+        let stop: Set<String> = ["the","and","a","an","to","of","for","on","in","with","at","by","is","are","be","this","that","it","work","session","study","studying","job","jobs","apply","applying"]
         let keywords = tokens.filter { $0.count >= 3 && !stop.contains($0) }
         let expanded = keywords.flatMap { k -> [String] in
             if k.contains("-") { return [k, k.replacingOccurrences(of: "-", with: "")] }
@@ -205,18 +242,14 @@ final class TriggerScorer: ObservableObject {
 
     private static func matchesAnyKeyword(_ kws: [String], in text: String) -> Bool {
         guard !kws.isEmpty, !text.isEmpty else { return false }
-        for k in kws {
-            if text.contains(k) { return true }
-        }
+        for k in kws { if text.contains(k) { return true } }
         return false
     }
 
     private func containsDistractor(title: String, host: String) -> Bool {
         let words = ["trending","memes","highlights","clips","shorts","reels","discover","for you","fyp"]
         for w in words {
-            if title.contains(w) || host.contains(w.replacingOccurrences(of: " ", with: "")) {
-                return true
-            }
+            if title.contains(w) || host.contains(w.replacingOccurrences(of: " ", with: "")) { return true }
         }
         return false
     }

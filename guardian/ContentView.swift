@@ -29,6 +29,7 @@ struct ContentView: View {
             HUDManager.shared.onStopRequested = { [weak session] in session?.stopSession() }
             ContextManager.shared.start()
             TriggerScorer.shared.bind(to: session)
+            AIReasoner.shared.bind(to: TriggerScorer.shared, session: session)
         }
         .onDisappear { ContextManager.shared.stop() }
         .onChange(of: session.mode) { _, newMode in
@@ -45,13 +46,6 @@ struct ContentView: View {
                 }
             case .idle:
                 HUDManager.shared.hide()
-            }
-        }
-        .onReceive(TriggerScorer.shared.$verdict) { verdict in
-            guard session.mode == .active else { return }
-            if verdict == .offTask {
-                let msg = makeNudgeMessage(task: session.taskTitle, ctx: ContextManager.shared, reason: TriggerScorer.shared.reason)
-                HUDManager.shared.flashNudge(msg)
             }
         }
     }
@@ -178,6 +172,26 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 6) {
             Divider().padding(.vertical, 4)
             Text("Scoring & Diagnostics").font(.headline)
+            
+            Divider().padding(.vertical, 6)
+            Text("Nudge Style").font(.subheadline).foregroundStyle(.secondary)
+
+            HStack(spacing: 16) {
+                Picker("Tone", selection: $settings.nudgeTone) {
+                    Text("Buddy").tag("buddy")
+                    Text("Coach").tag("coach")
+                    Text("Gentle").tag("gentle")
+                    Text("Direct").tag("direct")
+                }
+                .pickerStyle(.segmented)
+                Toggle("Emojis", isOn: $settings.nudgeEmojis).toggleStyle(.switch)
+
+                TextField("Persona name (optional)", text: $settings.personaName)
+                    .textFieldStyle(PillTextFieldStyle())
+                    .frame(maxWidth: 220)
+            }
+            .font(.callout)
+
 
             Group {
                 Text("Verdict: \(scorer.verdict.rawValue)")
