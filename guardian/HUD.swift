@@ -191,7 +191,7 @@ struct HUDView: View {
         VStack(spacing: 8) {
             // Main row
             HStack(spacing: 10) {
-                ProgressRing(progress: 0.75, size: 24)
+                BreathingBadge()
                 VStack(alignment: .leading, spacing: 2) {
                     Text(hud.taskTitle.isEmpty ? "Working…" : hud.taskTitle)
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
@@ -212,6 +212,7 @@ struct HUDView: View {
             }
             .padding(.horizontal, 12)
             .padding(.top, 10)
+            .padding(.bottom, 8)
 
             // Divider that appears only when expanded
             if hud.currentNudge != nil {

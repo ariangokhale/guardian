@@ -65,9 +65,9 @@ struct ContentView: View {
 
     private var header: some View {
         HStack(alignment: .center, spacing: 10) {
-            BreathingBadge()
             Text("Guardian")
                 .font(.system(size: 20, weight: .semibold, design: .rounded))
+                .foregroundColor(GuardianTheme.textPrimary)
             Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -77,9 +77,13 @@ struct ContentView: View {
 
     private var idleCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("What are you working on?")
-                .font(.system(size: 22, weight: .semibold, design: .rounded))
-                .foregroundColor(GuardianTheme.textPrimary)
+            HStack(spacing: 12) {
+                BreathingBadge()
+                Text("What are you working on?")
+                    .font(.system(size: 22, weight: .semibold, design: .rounded))
+                    .foregroundColor(GuardianTheme.textPrimary)
+                Spacer()
+            }
 
             HStack(spacing: 10) {
                 PlaceholderTextField(placeholder: "e.g., Practice LeetCode problems", text: $localTask)
