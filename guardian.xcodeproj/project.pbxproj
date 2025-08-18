@@ -26,6 +26,7 @@
 		245B0A332E4CDA2600A8F5B0 /* AIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A322E4CDA2600A8F5B0 /* AIModels.swift */; };
 		245B0A352E4CDA4A00A8F5B0 /* AIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A342E4CDA4A00A8F5B0 /* AIClient.swift */; };
 		245B0A372E4CDA7800A8F5B0 /* AIReasoner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A362E4CDA7800A8F5B0 /* AIReasoner.swift */; };
+		245B0A392E52E38300A8F5B0 /* BreathingBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A382E52E38300A8F5B0 /* BreathingBadge.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,6 +70,7 @@
 		245B0A322E4CDA2600A8F5B0 /* AIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIModels.swift; sourceTree = "<group>"; };
 		245B0A342E4CDA4A00A8F5B0 /* AIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIClient.swift; sourceTree = "<group>"; };
 		245B0A362E4CDA7800A8F5B0 /* AIReasoner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIReasoner.swift; sourceTree = "<group>"; };
+		245B0A382E52E38300A8F5B0 /* BreathingBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreathingBadge.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -122,6 +124,7 @@
 				245B0A342E4CDA4A00A8F5B0 /* AIClient.swift */,
 				245B0A322E4CDA2600A8F5B0 /* AIModels.swift */,
 				245B0A362E4CDA7800A8F5B0 /* AIReasoner.swift */,
+				245B0A382E52E38300A8F5B0 /* BreathingBadge.swift */,
 				245B09F32E4A3E6D00A8F5B0 /* ContentView.swift */,
 				245B0A1E2E4A3FB500A8F5B0 /* ContextManager.swift */,
 				245B0A282E4B958D00A8F5B0 /* DomainCatalog.swift */,
@@ -298,6 +301,7 @@
 				245B0A372E4CDA7800A8F5B0 /* AIReasoner.swift in Sources */,
 				245B0A352E4CDA4A00A8F5B0 /* AIClient.swift in Sources */,
 				245B0A312E4BE85A00A8F5B0 /* UIStyles.swift in Sources */,
+				245B0A392E52E38300A8F5B0 /* BreathingBadge.swift in Sources */,
 				245B0A1F2E4A3FB500A8F5B0 /* ContextManager.swift in Sources */,
 				245B0A252E4A8AB900A8F5B0 /* HUD.swift in Sources */,
 				245B0A332E4CDA2600A8F5B0 /* AIModels.swift in Sources */,

@@ -64,23 +64,15 @@ struct ContentView: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack(spacing: 10) {
-            ZStack {
-                Circle().fill(LinearGradient(colors: [GuardianTheme.primaryOrange, GuardianTheme.primaryOrange.opacity(0.8)],
-                                             startPoint: .topLeading, endPoint: .bottomTrailing))
-                Image(systemName: "shield.lefthalf.fill")
-                    .symbolRenderingMode(.palette)
-                    .foregroundStyle(.white, .white.opacity(0.8))
-            }
-            .frame(width: 32, height: 32)
+        HStack(alignment: .center, spacing: 10) {
+            BreathingBadge()
             Text("Guardian")
                 .font(.system(size: 20, weight: .semibold, design: .rounded))
-                .foregroundColor(GuardianTheme.textPrimary)
             Spacer()
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.bottom, 4)
     }
-
     // MARK: - Idle Card
 
     private var idleCard: some View {
