@@ -87,6 +87,7 @@ final class AIReasoner {
                         // Prefer AI copy; fallback to local if blank
                         let text = res.nudge.isEmpty ? Self.localBuddyLine(for: req) : res.nudge
                         HUDManager.shared.flashNudge(text)
+                        SpeechManager.shared.maybeSpeakNudge(text)
                         
                     case .unsure, .on_task, .off_task:
                         break

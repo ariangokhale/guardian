@@ -6,6 +6,7 @@ struct ContentView: View {
     @ObservedObject var ctx = ContextManager.shared
     @ObservedObject var scorer = TriggerScorer.shared
     @ObservedObject var settings = SettingsManager.shared
+    @ObservedObject var speech = SpeechManager.shared
 
     @State private var localTask: String = ""
 
@@ -187,7 +188,35 @@ struct ContentView: View {
             Divider().padding(.vertical, 4)
             Text("Message Personalization").font(.headline)
                 .foregroundColor(GuardianTheme.textPrimary)
+            Toggle("Spoken nudges", isOn: $speech.enabled)
+                .toggleStyle(.switch)
 
+            HStack {
+                Picker("Voice", selection: $speech.voiceIdentifier) {
+                    ForEach(SpeechManager.availableVoices, id: \.id) { v in
+                        Text("\(v.name) (\(v.lang))").tag(Optional(v.id))
+                    }
+                }
+                .frame(maxWidth: 260)
+
+                VStack(alignment: .leading) {
+                    Text("Rate: \(String(format: "%.2f", speech.rate))")
+                    Slider(value: $speech.rate, in: 0.35...0.65, step: 0.01)
+                }
+                .frame(maxWidth: 220)
+
+                VStack(alignment: .leading) {
+                    Text("Volume: \(Int(speech.volume * 100))%")
+                    Slider(value: $speech.volume, in: 0.4...1.0, step: 0.01)
+                }
+                .frame(maxWidth: 220)
+
+                Button("Test voice") {
+                    SpeechManager.shared.maybeSpeakNudge("Quick check — still on task?")
+                }
+                .buttonStyle(SecondaryButtonStyle())
+            }
+            .font(.callout)
             HStack(spacing: 16) {
                 SleekSegmentedPickerStyle(
                     options: [

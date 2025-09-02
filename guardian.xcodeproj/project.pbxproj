@@ -27,6 +27,7 @@
 		245B0A352E4CDA4A00A8F5B0 /* AIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A342E4CDA4A00A8F5B0 /* AIClient.swift */; };
 		245B0A372E4CDA7800A8F5B0 /* AIReasoner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A362E4CDA7800A8F5B0 /* AIReasoner.swift */; };
 		245B0A392E52E38300A8F5B0 /* BreathingBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A382E52E38300A8F5B0 /* BreathingBadge.swift */; };
+		245B0A3B2E53C01000A8F5B0 /* SpeechManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 245B0A3A2E53C01000A8F5B0 /* SpeechManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,6 +72,7 @@
 		245B0A342E4CDA4A00A8F5B0 /* AIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIClient.swift; sourceTree = "<group>"; };
 		245B0A362E4CDA7800A8F5B0 /* AIReasoner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIReasoner.swift; sourceTree = "<group>"; };
 		245B0A382E52E38300A8F5B0 /* BreathingBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreathingBadge.swift; sourceTree = "<group>"; };
+		245B0A3A2E53C01000A8F5B0 /* SpeechManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -132,6 +134,7 @@
 				245B0A242E4A8AB900A8F5B0 /* HUD.swift */,
 				245B0A202E4A895E00A8F5B0 /* SessionManager.swift */,
 				245B0A2E2E4BABC100A8F5B0 /* SettingsManager.swift */,
+				245B0A3A2E53C01000A8F5B0 /* SpeechManager.swift */,
 				245B0A2A2E4B97F100A8F5B0 /* TitleNormalizer.swift */,
 				245B0A2C2E4B9BDE00A8F5B0 /* TriggerScorer.swift */,
 				245B0A302E4BE85A00A8F5B0 /* UIStyles.swift */,
@@ -299,6 +302,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				245B0A372E4CDA7800A8F5B0 /* AIReasoner.swift in Sources */,
+				245B0A3B2E53C01000A8F5B0 /* SpeechManager.swift in Sources */,
 				245B0A352E4CDA4A00A8F5B0 /* AIClient.swift in Sources */,
 				245B0A312E4BE85A00A8F5B0 /* UIStyles.swift in Sources */,
 				245B0A392E52E38300A8F5B0 /* BreathingBadge.swift in Sources */,
