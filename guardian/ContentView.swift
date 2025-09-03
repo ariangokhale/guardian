@@ -6,7 +6,6 @@ struct ContentView: View {
     @ObservedObject var ctx = ContextManager.shared
     @ObservedObject var scorer = TriggerScorer.shared
     @ObservedObject var settings = SettingsManager.shared
-    @ObservedObject var speech = SpeechManager.shared
 
     @State private var localTask: String = ""
 
@@ -26,7 +25,6 @@ struct ContentView: View {
 
             // Always-visible sections
             messagePersonalization
-            timingControls
 
             // Only show scoring & diagnostics if flag is on
             if showDiagnostics {
@@ -186,117 +184,17 @@ struct ContentView: View {
     private var messagePersonalization: some View {
         VStack(alignment: .leading, spacing: 6) {
             Divider().padding(.vertical, 4)
-            Text("Message Personalization").font(.headline)
-                .foregroundColor(GuardianTheme.textPrimary)
-            Toggle("Spoken nudges", isOn: $speech.enabled)
-                .toggleStyle(.switch)
-
-            HStack {
-                Picker("Voice", selection: $speech.voiceIdentifier) {
-                    ForEach(SpeechManager.availableVoices, id: \.id) { v in
-                        Text("\(v.name) (\(v.lang))").tag(Optional(v.id))
-                    }
-                }
-                .frame(maxWidth: 260)
-
-                VStack(alignment: .leading) {
-                    Text("Rate: \(String(format: "%.2f", speech.rate))")
-                    Slider(value: $speech.rate, in: 0.35...0.65, step: 0.01)
-                }
-                .frame(maxWidth: 220)
-
-                VStack(alignment: .leading) {
-                    Text("Volume: \(Int(speech.volume * 100))%")
-                    Slider(value: $speech.volume, in: 0.4...1.0, step: 0.01)
-                }
-                .frame(maxWidth: 220)
-
-                Button("Test voice") {
-                    SpeechManager.shared.maybeSpeakNudge("Quick check — still on task?")
-                }
-                .buttonStyle(SecondaryButtonStyle())
-            }
-            .font(.callout)
-            HStack(spacing: 16) {
-                SleekSegmentedPickerStyle(
-                    options: [
-                        ("Buddy", "buddy"),
-                        ("Coach", "coach"),
-                        ("Gentle", "gentle"),
-                        ("Direct", "direct")
-                    ],
-                    selection: $settings.nudgeTone
-                )
-
-                PlaceholderTextField(placeholder: "Persona name (optional)", text: $settings.personaName)
-                    .frame(maxWidth: 220)
-            }
-            .font(.callout)
-        }
-    }
-
-    // MARK: - Always-visible Focus Timing
-
-    private var timingControls: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Divider().padding(.vertical, 4)
-            Text("Focus Timing").font(.headline)
+            Text("Personality").font(.headline)
                 .foregroundColor(GuardianTheme.textPrimary)
 
-            HStack(alignment: .top, spacing: 16) {
-                VStack(alignment: .center, spacing: 10) {
-                    Text("Warm-Up Time")
-                        .foregroundColor(GuardianTheme.textPrimary)
-                        .frame(maxWidth: .infinity)
-                    Slider(value: $settings.graceSeconds, in: 0...120, step: 5)
-                        .tint(GuardianTheme.primaryOrange)
-                    Text("\(Int(settings.graceSeconds)) seconds before monitoring distractions")
-                        .font(.caption).foregroundColor(GuardianTheme.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .multilineTextAlignment(.center)
-                }
-                .timingCard()
-                .frame(maxWidth: .infinity)
-                VStack(alignment: .center, spacing: 10) {
-                    Text("Patience Level")
-                        .foregroundColor(GuardianTheme.textPrimary)
-                        .frame(maxWidth: .infinity)
-                    HStack(spacing: 8) {
-                        Button(action: { if settings.persistenceRequired > 1 { settings.persistenceRequired -= 1 } }) {
-                            Image(systemName: "minus")
-                        }
-                        .buttonStyle(MiniCapsuleButtonStyle())
-                        Text("\(settings.persistenceRequired)")
-                            .monospacedDigit()
-                            .foregroundColor(GuardianTheme.textPrimary)
-                        Button(action: { if settings.persistenceRequired < 10 { settings.persistenceRequired += 1 } }) {
-                            Image(systemName: "plus")
-                        }
-                        .buttonStyle(MiniCapsuleButtonStyle())
-                    }
-                    Text("Needs \(settings.persistenceRequired) consecutive off-task checks")
-                        .font(.caption)
-                        .foregroundColor(GuardianTheme.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .multilineTextAlignment(.center)
-                }
-                .timingCard()
-                .frame(maxWidth: .infinity)
-                VStack(alignment: .center, spacing: 10) {
-                    Text("Quiet Time Between Messages")
-                        .foregroundColor(GuardianTheme.textPrimary)
-                        .frame(maxWidth: .infinity)
-                    Slider(value: $settings.cooldownSeconds, in: 0...300, step: 5)
-                        .tint(GuardianTheme.primaryOrange)
-                    Text("At least \(Int(settings.cooldownSeconds)) seconds between nudges")
-                        .font(.caption)
-                        .foregroundColor(GuardianTheme.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .multilineTextAlignment(.center)
-                }
-                .timingCard()
-                .frame(maxWidth: .infinity)
-            }
+            SleekSegmentedPickerStyle(
+                options: [
+                    ("Buddy", "buddy"),
+                    ("Coach", "coach"),
+                    ("Mean",  "mean")
+                ],
+                selection: $settings.nudgeTone
+            )
             .font(.callout)
         }
     }

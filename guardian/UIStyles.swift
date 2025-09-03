@@ -13,9 +13,9 @@ enum GuardianTheme {
     static let textSecondary = Color.gray
     
     static let cardRadius: CGFloat = 12
-    static let hudWidth: CGFloat = 340
-    static let hudHeightCompact: CGFloat = 76
-    static let hudHeightExpanded: CGFloat = 120
+    static let hudWidth: CGFloat = 360
+    static let hudHeightCompact: CGFloat = 80
+    static let hudHeightExpanded: CGFloat = 180
 }
 
 // MARK: - View helpers

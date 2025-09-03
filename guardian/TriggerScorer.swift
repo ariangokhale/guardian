@@ -12,9 +12,9 @@ enum Verdict: String {
 }
 
 struct ScorerConfig {
-    var graceSeconds: TimeInterval = 20
-    var persistenceRequired: Int = 3
-    var cooldownSeconds: TimeInterval = 45
+    var graceSeconds: TimeInterval = 10
+    var persistenceRequired: Int = 1
+    var cooldownSeconds: TimeInterval = 30
 }
 
 // MARK: - Scorer
@@ -82,16 +82,6 @@ final class TriggerScorer: ObservableObject {
                     return
                 }
                 self.scoreOnce(sessionStart: start)
-            }
-            .store(in: &cancellables)
-
-        // Live settings feed
-        settings.$graceSeconds
-            .combineLatest(settings.$persistenceRequired, settings.$cooldownSeconds)
-            .sink { [weak self] (grace, persist, cool) in
-                self?.config.graceSeconds = grace
-                self?.config.persistenceRequired = persist
-                self?.config.cooldownSeconds = cool
             }
             .store(in: &cancellables)
     }

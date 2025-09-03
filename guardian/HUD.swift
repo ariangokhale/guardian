@@ -134,7 +134,7 @@ final class HUDManager: ObservableObject {
 
     /// Show a temporary nudge.
     /// You can pass `alternatives` (e.g., from AI) and we'll pick a fresh one if possible.
-    func flashNudge(_ text: String, alternatives: [String] = [], duration: TimeInterval = 2.5) {
+    func flashNudge(_ text: String, alternatives: [String] = [], duration: TimeInterval = 4.5) {
         DispatchQueue.main.async {
             // Pick a message that isn't in the recent history, if possible
             let options = [text] + alternatives
@@ -144,7 +144,7 @@ final class HUDManager: ObservableObject {
             self.clearWorkItem?.cancel()
 
             self.resize(expanded: true)
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
+            withAnimation(.spring(response: 0.36, dampingFraction: 0.8)) {
                 self.currentNudge = Nudge(text: chosen)
             }
 
@@ -160,7 +160,7 @@ final class HUDManager: ObservableObject {
                     if self.currentNudge?.text == chosen { self.currentNudge = nil }
                 }
                 // Collapse slightly after fade to avoid clipping
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
                     self.resize(expanded: false)
                 }
             }
@@ -229,13 +229,13 @@ struct HUDView: View {
                         .imageScale(.small)
                         .foregroundColor(GuardianTheme.primaryOrange)
                     Text(nudge.text)
-                        .font(.caption)
+                        .font(.callout)
                         .foregroundColor(GuardianTheme.textPrimary)
-                        .lineLimit(2)
+                        .lineLimit(3)
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, 12)
-                .padding(.bottom, 10)
+                .padding(.bottom, 12)
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
